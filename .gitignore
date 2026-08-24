@@ -1,0 +1,11 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.log
+.env
+node_modules/
+
+# Agent internal (jangan di-push)
+.omo/
+.serena/
+.codegraph

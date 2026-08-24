@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AquaSpace — Fish Tank Stocking Calculator</title>
+<meta name="description" content="Find out how many fish can safely live in your tank. Friendly aquarium stocking calculator." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root{
+    --bg:#f0f8f9;
+    --surface:#ffffff;
+    --text:#0f2a2e;
+    --muted:#6b8790;
+    --line:#e1ecef;
+    --teal:#0e7a7b;
+    --teal-dark:#095658;
+    --teal-light:#e6f4f4;
+    --aqua:#14b8a6;
+    --coral:#ff6b6b;
+    --amber:#f59e0b;
+    --green:#0ea5a0;
+    --radius:18px;
+    --shadow:0 8px 32px rgba(15,42,46,.08), 0 1px 3px rgba(15,42,46,.06);
+    --shadow-sm:0 4px 16px rgba(15,42,46,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(20,184,166,.14), transparent 60%),
+      radial-gradient(700px 600px at -10% 30%, rgba(14,122,123,.08), transparent 60%),
+      linear-gradient(180deg, #f0f8f9 0%, #e8f4f6 100%);
+    z-index:-2;
+  }
+  .bubbles{position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden}
+  .bubbles span{
+    position:absolute; bottom:-40px; background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.25));
+    border-radius:50%; border:1px solid rgba(255,255,255,.6);
+    animation: rise linear infinite;
+    box-shadow: inset 0 2px 6px rgba(255,255,255,.9), 0 1px 4px rgba(14,122,123,.1);
+  }
+  .bubbles span:nth-child(1){ left:8%; width:18px; height:18px; animation-duration:18s}
+  .bubbles span:nth-child(2){ left:18%; width:10px; height:10px; animation-duration:14s; animation-delay:2s}
+  .bubbles span:nth-child(3){ left:34%; width:22px; height:22px; animation-duration:20s; animation-delay:1s}
+  .bubbles span:nth-child(4){ left:52%; width:14px; height:14px; animation-duration:16s; animation-delay:4s}
+  .bubbles span:nth-child(5){ left:68%; width:8px; height:8px; animation-duration:12s; animation-delay:3s}
+  .bubbles span:nth-child(6){ left:82%; width:16px; height:16px; animation-duration:19s; animation-delay:6s}
+  .bubbles span:nth-child(7){ left:91%; width:11px; height:11px; animation-duration:15s; animation-delay:5s}
+  @keyframes rise{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:.7}90%{opacity:.5}100%{transform:translateY(-110vh) translateX(18px);opacity:0}}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:0 20px 40px}
+  header{display:flex; align-items:center; justify-content:space-between; padding:22px 0 18px; gap:16px}
+  .brand{display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit}
+  .logo{
+    width:42px; height:42px; border-radius:12px;
+    background:linear-gradient(135deg, var(--teal) 0%, #14b8a6 100%);
+    display:grid; place-items:center; color:white;
+    box-shadow:0 6px 16px rgba(14,122,123,.28);
+  }
+  .logo i{width:22px; height:22px; stroke-width:2.2}
+  .brand h1{font-family:Nunito, sans-serif; font-size:21px; font-weight:900; letter-spacing:-.02em; margin:0; line-height:1}
+  .brand p{margin:2px 0 0; font-size:12.5px; color:var(--muted); font-weight:500}
+  .pill{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    padding:8px 14px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted);
+    box-shadow:var(--shadow-sm); white-space:nowrap;
+  }
+  .pill i{width:14px; height:14px; color:var(--teal)}
+  .pill b{color:var(--teal)}
+
+  .app{display:grid; grid-template-columns: 1.05fr .95fr; gap:22px; align-items:start}
+  @media (max-width:860px){ .app{grid-template-columns:1fr} header{flex-wrap:wrap} }
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden}
+  .card-pad{padding:22px}
+  .card h2{font-family:Nunito, sans-serif; font-size:18px; font-weight:800; letter-spacing:-.02em; margin:0 0 6px; display:flex; align-items:center; gap:8px}
+  .card h2 .icon{width:28px; height:28px; border-radius:8px; background:var(--teal-light); display:grid; place-items:center; color:var(--teal)}
+  .card h2 .icon i{width:16px; height:16px; stroke-width:2.2}
+  .sub{font-size:13.5px; color:var(--muted); margin:0 0 18px; line-height:1.5}
+
+  .tankControl{background:linear-gradient(180deg, #f8fbfb, #ffffff); border:1px solid var(--line); border-radius:16px; padding:16px; display:grid; gap:14px}
+  .tankRow{display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .field label{font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px}
+  .inputWrap{display:flex; align-items:center; gap:0; background:white; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; transition:.15s border-color, .15s box-shadow}
+  .inputWrap:focus-within{border-color:var(--teal); box-shadow:0 0 0 4px rgba(14,122,123,.12)}
+  .inputWrap input{width:110px; border:0; outline:0; padding:12px 14px; font-size:20px; font-weight:800; color:var(--text); font-family:Nunito, sans-serif}
+  .inputWrap .unit{font-size:13px; font-weight:700; color:var(--muted); padding-right:14px; white-space:nowrap}
+  .steppers{display:flex; gap:8px}
+  .btn-step{width:44px; height:44px; border-radius:12px; border:1px solid var(--line); background:white; color:var(--teal); cursor:pointer; display:grid; place-items:center; transition:.15s}
+  .btn-step i{width:18px; height:18px; stroke-width:2.4}
+  .btn-step:hover{border-color:var(--teal); background:var(--teal-light)}
+  .btn-step:active{transform:scale(.96)}
+  input[type=range]{width:100%; accent-color:var(--teal); height:6px}
+  .rangeLabels{display:flex; justify-content:space-between; font-size:11px; font-weight:600; color:var(--muted)}
+
+  .fishGrid{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px}
+  @media (max-width:520px){ .fishGrid{grid-template-columns:repeat(2, 1fr)} }
+  .fishCard{position:relative; text-align:left; background:white; border:1.5px solid var(--line); border-radius:14px; padding:14px 12px 12px; cursor:pointer; transition:.16s; display:flex; flex-direction:column; gap:8px}
+  .fishCard:hover{border-color:#cfe6e6; transform:translateY(-1px); box-shadow:var(--shadow-sm)}
+  .fishCard.selected{border-color:var(--teal); background:linear-gradient(180deg, #f0faf9, #ffffff); box-shadow:0 0 0 4px rgba(14,122,123,.12), var(--shadow-sm)}
+  .fishCard.selected::after{content:""; position:absolute; top:8px; right:8px; width:20px; height:20px; background:var(--teal); border-radius:50%; display:grid; place-items:center}
+  .fishCard.selected::before{content:"✓"; position:absolute; top:8px; right:8px; width:20px; height:20px; color:white; font-size:12px; font-weight:800; display:grid; place-items:center; z-index:1; line-height:20px; text-align:center}
+  .fishIcon{width:40px; height:40px; border-radius:10px; display:grid; place-items:center; border:1px solid #e8f0f0}
+  .fishIcon i{width:20px; height:20px; stroke-width:1.9}
+  .fishCard.selected .fishIcon{border-color:#cde9e8}
+  .fishName{font-weight:800; font-size:13.5px; letter-spacing:-.01em; margin:0; line-height:1.1}
+  .fishMeta{font-size:12px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--aqua); display:inline-block}
+  .tag{font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:3px 7px; border-radius:999px; background:#f0f8f9; border:1px solid var(--line); color:#5a757c}
+  .fishGal{font-size:12px; font-weight:700; color:var(--teal)}
+  .fishGal b{font-family:Nunito, sans-serif; font-size:13px}
+
+  .qtyControl{display:flex; align-items:center; gap:0; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; background:white}
+  .qtyControl button{width:42px; height:42px; border:0; background:white; color:var(--teal); cursor:pointer; display:grid; place-items:center}
+  .qtyControl button i{width:16px; height:16px; stroke-width:2.4}
+  .qtyControl button:hover{background:var(--teal-light)}
+  .qtyControl input{width:56px; height:42px; border:0; border-left:1px solid var(--line); border-right:1px solid var(--line); text-align:center; font-size:16px; font-weight:800; font-family:Nunito, sans-serif; outline:0}
+  .btn-add{
+    flex:1; height:44px; border:0; border-radius:12px;
+    background:linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+    color:white; font-weight:800; font-size:14.5px; letter-spacing:.01em; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 8px 18px rgba(14,122,123,.28); transition:.16s;
+  }
+  .btn-add i{width:16px; height:16px; stroke-width:2.4}
+  .btn-add:hover{transform:translateY(-1px); box-shadow:0 10px 22px rgba(14,122,123,.32)}
+  .btn-add:active{transform:translateY(0) scale(.98)}
+  .btn-add:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none}
+  .hint{font-size:12px; color:var(--muted); margin:8px 0 0; min-height:16px}
+  .hint.error{color:var(--coral); font-weight:600}
+
+  .stack{display:grid; gap:18px}
+  .gaugeCard{padding:22px}
+  .gaugeHeader{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap}
+  .statusPill{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:6px 10px; border-radius:999px; border:1px solid transparent; display:inline-flex; align-items:center; gap:6px}
+  .statusPill i{width:12px; height:12px}
+  .status-safe{background:#ecfdf5; color:#065f46; border-color:#a7f3d0}
+  .status-warn{background:#fffbeb; color:#92400e; border-color:#fde68a}
+  .status-over{background:#fef2f2; color:#991b1b; border-color:#fecaca}
+  .numbers{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .numbers strong{font-family:Nunito, sans-serif; font-size:28px; font-weight:900; letter-spacing:-.03em}
+  .numbers span{font-size:13px; font-weight:600; color:var(--muted)}
+  .barTrack{height:22px; background:#eef4f5; border-radius:999px; overflow:hidden; position:relative; border:1px solid #e1ecef; padding:3px}
+  .barFill{height:100%; border-radius:999px; width:0%; transition:width .6s cubic-bezier(.22,1,.36,1), background .3s; position:relative; overflow:hidden; background:linear-gradient(90deg, var(--green) 0%, #2dd4bf 100%); box-shadow: inset 0 1px 2px rgba(255,255,255,.6)}
+  .barFill.warn{background:linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)}
+  .barFill.over{background:linear-gradient(90deg, #ef4444 0%, #f87171 100%)}
+  .barFill::after{content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform:translateX(-100%); animation:shine 2.8s infinite}
+  @keyframes shine{ 60%{transform:translateX(100%)} 100%{transform:translateX(100%)} }
+  .barLabels{display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:var(--muted); margin-top:6px}
+  .summary{background:linear-gradient(180deg, #f8fbfb, #f0f7f8); border:1px solid var(--line); border-radius:14px; padding:14px; font-size:13.5px; font-weight:600; color:#1c3a3e; line-height:1.5; display:flex; gap:10px; align-items:flex-start}
+  .summary .sIcon{width:22px; height:22px; display:grid; place-items:center; flex-shrink:0; margin-top:1px; color:var(--teal)}
+  .summary .sIcon i{width:18px; height:18px}
+  .summary.over{ background:#fef2f2; border-color:#fecaca; color:#7f1d1d }
+  .summary.over .sIcon{color:#dc2626}
+  .summary.warn{ background:#fffbeb; border-color:#fde68a; color:#78350f }
+  .summary.warn .sIcon{color:#d97706}
+  .summary.safe{ background:#ecfdf5; border-color:#a7f3d0; color:#064e3b }
+  .summary.safe .sIcon{color:#059669}
+
+  .listCard .head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--line)}
+  .head h3{font-family:Nunito, sans-serif; font-size:14px; font-weight:800; letter-spacing:-.01em; margin:0; display:flex; align-items:center; gap:8px}
+  .head h3 i{width:16px; height:16px; color:var(--teal)}
+  .head h3 span{color:var(--muted); font-weight:600; font-family:Inter, sans-serif; font-size:12px}
+  .btn-clear{font-size:12.5px; font-weight:700; color:var(--muted); background:white; border:1px solid var(--line); padding:7px 11px; border-radius:999px; cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:6px}
+  .btn-clear i{width:12px; height:12px}
+  .btn-clear:hover{color:var(--coral); border-color:#fecaca; background:#fef2f2}
+  .fishList{list-style:none; margin:0; padding:10px; display:grid; gap:8px; max-height:380px; overflow:auto}
+  .empty{padding:28px 18px; text-align:center; color:var(--muted); font-size:13.5px; line-height:1.6}
+  .empty .big{width:48px; height:48px; margin:0 auto 10px; border-radius:14px; background:var(--teal-light); display:grid; place-items:center; color:var(--teal)}
+  .empty .big i{width:22px; height:22px}
+  .empty b{color:var(--text)}
+  .row{display:flex; align-items:center; gap:12px; background:white; border:1px solid var(--line); border-radius:12px; padding:10px 10px 10px 12px; transition:.12s}
+  .row:hover{border-color:#d5e8e8; box-shadow:var(--shadow-sm)}
+  .rowIcon{width:38px; height:38px; border-radius:10px; background:#f3f8f8; border:1px solid #e8f0f0; display:grid; place-items:center; flex-shrink:0; color:var(--teal)}
+  .rowIcon i{width:18px; height:18px; stroke-width:1.9}
+  .rowMain{flex:1; min-width:0}
+  .rowName{font-weight:800; font-size:13.5px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .rowSub{font-size:12px; color:var(--muted); font-weight:600; margin-top:1px}
+  .rowSub b{color:var(--text)}
+  .rowTotal{font-family:Nunito, sans-serif; font-weight:900; font-size:13px; color:var(--teal); background:var(--teal-light); padding:6px 9px; border-radius:999px; white-space:nowrap}
+  .btn-remove{width:32px; height:32px; border-radius:9px; border:1px solid var(--line); background:white; color:var(--muted); cursor:pointer; display:grid; place-items:center; flex-shrink:0; transition:.15s}
+  .btn-remove i{width:14px; height:14px; stroke-width:2.2}
+  .btn-remove:hover{background:#fef2f2; border-color:#fecaca; color:var(--coral)}
+  .stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding:0 10px 12px}
+  .stat{background:#f8fbfb; border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center}
+  .stat strong{font-family:Nunito, sans-serif; font-size:18px; font-weight:900; display:block; line-height:1}
+  .stat span{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  footer{margin-top:18px; text-align:center; font-size:12px; color:var(--muted); font-weight:500}
+  footer a{color:var(--teal); text-decoration:none; font-weight:700}
+</style>
+</head>
+<body>
+<div class="bubbles" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div class="wrap">
+  <header>
+    <a class="brand" href="#">
+      <div class="logo"><i data-lucide="fish"></i></div>
+      <div>
+        <h1>AquaSpace</h1>
+        <p>Tank Stocking Calculator • keep it balanced</p>
+      </div>
+    </a>
+    <div class="pill"><i data-lucide="sparkles"></i> <b>5 species</b> presets • instant feedback • no sign-up</div>
+  </header>
+
+  <main class="app">
+    <section class="card">
+      <div class="card-pad">
+        <h2><span class="icon"><i data-lucide="droplets"></i></span> Your Tank</h2>
+        <p class="sub">Set your tank size, then tap a fish to add it. We’ll keep the math tidy.</p>
+        <div class="tankControl">
+          <div class="tankRow">
+            <div class="field">
+              <label for="tankInput">Tank size</label>
+              <div class="inputWrap">
+                <input id="tankInput" type="number" min="1" max="500" step="1" value="20" inputmode="numeric" />
+                <span class="unit">gallons</span>
+              </div>
+            </div>
+            <div class="steppers">
+              <button class="btn-step" id="tankMinus" aria-label="Decrease tank size"><i data-lucide="minus"></i></button>
+              <button class="btn-step" id="tankPlus" aria-label="Increase tank size"><i data-lucide="plus"></i></button>
+            </div>
+          </div>
+          <div>
+            <input id="tankRange" type="range" min="5" max="100" value="20" step="1" />
+            <div class="rangeLabels"><span>5 gal</span><span>50 gal</span><span>100+ gal</span></div>
+          </div>
+        </div>
+
+        <h2 style="margin-top:20px"><span class="icon"><i data-lucide="fish"></i></span> Pick a species</h2>
+        <p class="sub" style="margin-bottom:10px">Tap a card to select it. Each fish has a recommended gallons.</p>
+        <div class="fishGrid" id="fishGrid"></div>
+
+        <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <div class="field" style="flex:0 0 auto">
+            <label for="qtyInput">Quantity</label>
+            <div class="qtyControl">
+              <button id="qtyMinus" aria-label="Decrease quantity"><i data-lucide="minus"></i></button>
+              <input id="qtyInput" type="number" min="1" max="99" value="1" inputmode="numeric" />
+              <button id="qtyPlus" aria-label="Increase quantity"><i data-lucide="plus"></i></button>
+            </div>
+          </div>
+          <div style="flex:1; min-width:160px; display:grid; gap:6px; align-self:end">
+            <button id="addBtn" class="btn-add" disabled><i data-lucide="plus"></i><span>Add to tank</span></button>
+            <div id="hint" class="hint">Select a fish above to start</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="stack">
+      <section class="card gaugeCard">
+        <div class="gaugeHeader">
+          <h2 style="margin:0"><span class="icon"><i data-lucide="gauge"></i></span> Capacity</h2>
+          <span id="statusPill" class="statusPill status-safe"><i data-lucide="check-circle-2"></i> Safe • room to swim</span>
+        </div>
+        <div class="numbers">
+          <strong id="numbersUsed">0 / 20 gal</strong>
+          <span id="numbersPct">0% used</span>
+        </div>
+        <div class="barTrack" aria-label="capacity bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="barFill" class="barFill" style="width:0%"></div>
+        </div>
+        <div class="barLabels"><span id="labelUsed">0 gal used</span><span id="labelFree">20 gal free</span></div>
+        <div id="summary" class="summary safe" style="margin-top:14px">
+          <span class="sIcon"><i data-lucide="waves"></i></span>
+          <span id="summaryText">Add some fish to see your stocking level. Try 5 Guppies to start!</span>
+        </div>
+      </section>
+
+      <section class="card listCard">
+        <div class="head">
+          <h3><i data-lucide="layers"></i> Your stock <span id="stockCount">• 0 fish</span></h3>
+          <button id="clearBtn" class="btn-clear"><i data-lucide="trash-2"></i> Clear all</button>
+        </div>
+        <ul id="fishList" class="fishList"></ul>
+        <div id="emptyState" class="empty">
+          <div class="big"><i data-lucide="waves"></i></div>
+          <b>No fish yet</b><br>
+          Pick a species on the left and press Add. Your running list will appear here with a remove button per row.
+        </div>
+        <div class="stats">
+          <div class="stat"><strong id="statFish">0</strong><span>Total fish</span></div>
+          <div class="stat"><strong id="statUsed">0 gal</strong><span>Gallons used</span></div>
+          <div class="stat"><strong id="statFree">20 gal</strong><span>Gallons free</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer>Built for new fish keepers • Rule of thumb: 1 gal per inch is a starting point — always check temperament & filtration. <a href="#">Learn more</a></footer>
+</div>
+
+<script>
+const SPECIES = [
+  { key:'guppy', name:'Guppy', gal:1, icon:'fish', tag:'Peaceful', color:'#e0f2fe', iconColor:'#0ea5e9' },
+  { key:'tetra', name:'Neon Tetra', gal:2, icon:'sparkles', tag:'Schooling', color:'#fef9c3', iconColor:'#ca8a04' },
+  { key:'betta', name:'Betta', gal:5, icon:'crown', tag:'Territorial', color:'#fce7f3', iconColor:'#db2777' },
+  { key:'goldfish', name:'Goldfish', gal:10, icon:'fish', tag:'Messy', color:'#ffedd5', iconColor:'#ea580c' },
+  { key:'angelfish', name:'Angelfish', gal:10, icon:'waves', tag:'Semi-aggressive', color:'#ede9fe', iconColor:'#7c3aed' },
+];
+const el = {
+  tankInput: document.getElementById('tankInput'),
+  tankRange: document.getElementById('tankRange'),
+  tankMinus: document.getElementById('tankMinus'),
+  tankPlus: document.getElementById('tankPlus'),
+  fishGrid: document.getElementById('fishGrid'),
+  qtyInput: document.getElementById('qtyInput'),
+  qtyMinus: document.getElementById('qtyMinus'),
+  qtyPlus: document.getElementById('qtyPlus'),
+  addBtn: document.getElementById('addBtn'),
+  hint: document.getElementById('hint'),
+  barFill: document.getElementById('barFill'),
+  numbersUsed: document.getElementById('numbersUsed'),
+  numbersPct: document.getElementById('numbersPct'),
+  labelUsed: document.getElementById('labelUsed'),
+  labelFree: document.getElementById('labelFree'),
+  statusPill: document.getElementById('statusPill'),
+  summary: document.getElementById('summary'),
+  summaryText: document.getElementById('summaryText'),
+  summaryIcon: document.querySelector('#summary .sIcon'),
+  fishList: document.getElementById('fishList'),
+  emptyState: document.getElementById('emptyState'),
+  stockCount: document.getElementById('stockCount'),
+  statFish: document.getElementById('statFish'),
+  statUsed: document.getElementById('statUsed'),
+  statFree: document.getElementById('statFree'),
+  clearBtn: document.getElementById('clearBtn'),
+};
+let tankSize = 20;
+let selectedKey = null;
+let stock = [];
+let nextId = 1;
+function speciesByKey(k){ return SPECIES.find(s=>s.key===k) }
+function refreshIcons(){ if(window.lucide) lucide.createIcons(); }
+
+function renderFishGrid(){
+  el.fishGrid.innerHTML = SPECIES.map(s=>{
+    const sel = s.key===selectedKey ? ' selected' : '';
+    return `<button class="fishCard${sel}" data-key="${s.key}" aria-pressed="${s.key===selectedKey}">
+      <div class="fishIcon" style="background:${s.color}; color:${s.iconColor}; border-color:${s.color}"><i data-lucide="${s.icon}"></i></div>
+      <p class="fishName">${s.name}</p>
+      <div class="fishMeta"><span class="dot"></span><span class="fishGal"><b>${s.gal}</b> gal / fish</span></div>
+      <span class="tag">${s.tag}</span>
+    </button>`;
+  }).join('');
+  el.fishGrid.querySelectorAll('.fishCard').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedKey = btn.dataset.key;
+      renderFishGrid();
+      updateControls();
+      refreshIcons();
+    });
+  });
+  refreshIcons();
+}
+function clampTank(v){ let n=parseInt(v,10); if(isNaN(n)) return 1; return Math.max(1, Math.min(500, n)); }
+function clampQty(v){ let n=parseInt(v,10); if(isNaN(n)) return 1; return Math.max(1, Math.min(99, n)); }
+function totalUsed(){ return stock.reduce((sum,row)=> sum + speciesByKey(row.key).gal * row.qty,0); }
+function totalFish(){ return stock.reduce((s,r)=>s+r.qty,0) }
+function updateControls(){
+  const hasSel = !!selectedKey;
+  el.addBtn.disabled = !hasSel;
+  if(!hasSel){
+    el.hint.textContent = 'Select a fish above to start';
+    el.hint.className = 'hint';
+    el.addBtn.querySelector('span').textContent = 'Add to tank';
+  } else {
+    const s = speciesByKey(selectedKey);
+    const q = clampQty(el.qtyInput.value);
+    el.addBtn.querySelector('span').textContent = `Add ${q} × ${s.name}`;
+    el.hint.textContent = `${s.name} needs ${s.gal} gal each • ${q} fish = ${q*s.gal} gallons`;
+    el.hint.className = 'hint';
+  }
+}
+function renderAll(){
+  const used = totalUsed();
+  const pct = tankSize>0 ? (used / tankSize * 100) : 0;
+  const pctClamped = Math.min(200, pct);
+  const remaining = tankSize - used;
+  const free = Math.max(0, remaining);
+  el.numbersUsed.textContent = `${used} / ${tankSize} gal`;
+  el.numbersPct.textContent = `${Math.round(pct)}% used`;
+  el.labelUsed.textContent = `${used} gal used`;
+  el.labelFree.textContent = `${free} gal free`;
+  el.barFill.style.width = Math.min(100, pctClamped) + '%';
+  el.barFill.parentElement.setAttribute('aria-valuenow', Math.round(Math.min(100,pct)));
+  el.statFish.textContent = totalFish();
+  el.statUsed.textContent = used + ' gal';
+  el.statFree.textContent = free + ' gal';
+  el.stockCount.textContent = `• ${totalFish()} fish • ${used} gal`;
+  let status='safe', label='Safe • room to swim', cls='safe', statusIcon='check-circle-2';
+  if(pct>100){ status='over'; label='Overstocked • too crowded'; cls='over'; statusIcon='alert-triangle'; }
+  else if(pct>80){ status='warn'; label='Almost full • caution'; cls='warn'; statusIcon='alert-circle'; }
+  el.statusPill.innerHTML = `<i data-lucide="${statusIcon}"></i> ${label}`;
+  el.statusPill.className = 'statusPill status-' + (status==='safe'?'safe': status==='warn'?'warn':'over');
+  el.barFill.className = 'barFill ' + (status==='warn'?'warn': status==='over'?'over':'');
+
+  el.summary.className = 'summary ' + cls;
+  let icon='waves', text='';
+  const smallest = SPECIES.reduce((a,b)=> a.gal < b.gal ? a : b);
+  const tetra = speciesByKey('tetra');
+  if(stock.length===0){
+    icon='waves'; text=`Add some fish to see your stocking level. Try 5 Guppies to fill ${Math.min(5,tankSize)} gallons!`;
+  } else if(remaining < 0){
+    const over = Math.abs(remaining);
+    const needToRemoveGuppy = Math.ceil(over / smallest.gal);
+    icon='alert-triangle'; text=`Overstocked by ${over} gallon${over!==1?'s':''}! Remove about ${needToRemoveGuppy} Gupp${needToRemoveGuppy===1?'y':'ies'} (or ${over} gal) to get back to safe.`;
+  } else if(remaining===0){
+    icon='badge-check'; text=`Perfectly stocked! Your ${tankSize}-gallon tank is at 100% capacity. Well balanced.`;
+  } else if(pct>80){
+    const fitGuppy = Math.floor(remaining / smallest.gal);
+    icon='alert-circle'; text=`Almost full — only ${remaining} gallon${remaining!==1?'s':''} left. Room for ${fitGuppy} more Gupp${fitGuppy===1?'y':'ies'} at most.`;
+  } else {
+    const fitGuppy = Math.floor(remaining / smallest.gal);
+    const fitTetra = Math.floor(remaining / tetra.gal);
+    icon='check-circle-2';
+    if(fitGuppy>0){
+      text=`Your ${tankSize}-gallon tank has ${remaining} gallons free — room for ${fitGuppy} more Gupp${fitGuppy===1?'y':'ies'} or ${fitTetra} more Neon Tetras!`;
+    } else {
+      text=`Your ${tankSize}-gallon tank has ${remaining} gallon${remaining!==1?'s':''} remaining.`;
+    }
+  }
+  el.summaryIcon.innerHTML = `<i data-lucide="${icon}"></i>`;
+  el.summaryText.textContent = text;
+
+  if(stock.length===0){
+    el.fishList.style.display='none';
+    el.emptyState.style.display='block';
+  } else {
+    el.fishList.style.display='grid';
+    el.emptyState.style.display='none';
+    el.fishList.innerHTML = stock.map(row=>{
+      const s = speciesByKey(row.key);
+      const subtotal = s.gal * row.qty;
+      return `<li class="row">
+        <div class="rowIcon" style="color:${s.iconColor}; background:${s.color}; border-color:${s.color}"><i data-lucide="${s.icon}"></i></div>
+        <div class="rowMain">
+          <p class="rowName">${s.name} × ${row.qty}</p>
+          <div class="rowSub"><b>${row.qty}</b> × ${s.gal} gal = <b>${subtotal} gal</b> • ${s.tag}</div>
+        </div>
+        <span class="rowTotal">${subtotal} gal</span>
+        <button class="btn-remove" data-id="${row.id}" aria-label="Remove ${s.name}"><i data-lucide="x"></i></button>
+      </li>`;
+    }).join('');
+    el.fishList.querySelectorAll('.btn-remove').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const id = parseInt(b.dataset.id,10);
+        stock = stock.filter(r=>r.id!==id);
+        renderAll();
+        refreshIcons();
+      });
+    });
+  }
+  el.clearBtn.style.visibility = stock.length ? 'visible' : 'hidden';
+  el.tankRange.value = Math.min(100, tankSize);
+  refreshIcons();
+}
+function addCurrent(){
+  if(!selectedKey) { el.hint.textContent='Pick a fish species first!'; el.hint.className='hint error'; return; }
+  const qty = clampQty(el.qtyInput.value);
+  el.qtyInput.value = qty;
+  const existing = stock.find(r=>r.key===selectedKey);
+  if(existing) existing.qty += qty;
+  else stock.push({id: nextId++, key: selectedKey, qty});
+  el.addBtn.animate([{transform:'scale(1)'},{transform:'scale(0.97)'},{transform:'scale(1)'}],{duration:180, easing:'ease-out'});
+  renderAll();
+}
+el.tankInput.addEventListener('input', e=>{ tankSize = clampTank(e.target.value); renderAll(); });
+el.tankInput.addEventListener('blur', e=>{ e.target.value = tankSize; });
+el.tankRange.addEventListener('input', e=>{ tankSize = clampTank(e.target.value); el.tankInput.value = tankSize; renderAll(); });
+el.tankMinus.addEventListener('click', ()=>{ tankSize = clampTank(tankSize-1); el.tankInput.value=tankSize; renderAll(); });
+el.tankPlus.addEventListener('click', ()=>{ tankSize = clampTank(tankSize+1); el.tankInput.value=tankSize; renderAll(); });
+el.qtyInput.addEventListener('input', ()=>{ el.qtyInput.value = el.qtyInput.value.replace(/[^0-9]/g,''); updateControls(); });
+el.qtyInput.addEventListener('blur', ()=>{ el.qtyInput.value = clampQty(el.qtyInput.value); updateControls(); });
+el.qtyMinus.addEventListener('click', ()=>{ let v=clampQty(el.qtyInput.value)-1; if(v<1)v=1; el.qtyInput.value=v; updateControls(); });
+el.qtyPlus.addEventListener('click', ()=>{ let v=clampQty(el.qtyInput.value)+1; el.qtyInput.value=v; updateControls(); });
+el.addBtn.addEventListener('click', addCurrent);
+el.clearBtn.addEventListener('click', ()=>{ stock=[]; renderAll(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Enter' && selectedKey){ if(document.activeElement===el.qtyInput || document.activeElement===el.addBtn) addCurrent(); } });
+
+renderFishGrid();
+updateControls();
+renderAll();
+refreshIcons();
+</script>
+</body>
+</html>
